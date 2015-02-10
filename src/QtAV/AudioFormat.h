@@ -30,24 +30,44 @@
 class QDebug;
 namespace QtAV {
 
+
 class AudioFormatPrivate;
 class Q_AV_EXPORT AudioFormat
 {
 public:
+    enum {
+        Masks = 5,
+        IntMask = 1,
+        SignedMask = 1 << 1,
+        PlanarMask = 1 << 2,
+        ByteOrderMask = 1 << 3
+    };
+    enum SampleType {
+        IntSample,
+        FloatSample,
+        DoubleSample
+    };
+
     //TODO: what about paInt24
     enum SampleFormat {
-        SampleFormat_Unknown = -1,
+        SampleFormat_Unknown = 0,
         SampleFormat_Input = SampleFormat_Unknown,
-        SampleFormat_Unsigned8,
-        SampleFormat_Signed16,
-        SampleFormat_Signed32,
-        SampleFormat_Float,
-        SampleFormat_Double,
-        SampleFormat_Unsigned8Planar,
-        SampleFormat_Signed16Planar,
-        SampleFormat_Signed32Planar,
-        SampleFormat_FloatPlanar,
-        SampleFormat_DoublePlanar
+        SampleFormat_Unsigned8 = (1<<Masks)|IntMask,
+        SampleFormat_Signed8 = (1<<Masks)|SignedMask|IntMask,
+        SampleFormat_Unsigned16 = (2<<Masks)|IntMask,
+        SampleFormat_Signed16 = (2<<Masks)|SignedMask|IntMask,
+        SampleFormat_Unsigned24 = (3<<Masks)|IntMask,
+        SampleFormat_Signed24 = (3<<Masks)|SignedMask|IntMask,
+        SampleFormat_Unsigned32 = (4<<Masks)|IntMask,
+        SampleFormat_Signed32 = (4<<Masks)|SignedMask|IntMask,
+        SampleFormat_Float = (4<<Masks),
+        SampleFormat_Double = (8<<Masks),
+        SampleFormat_Unsigned8Planar = (1<<Masks)|PlanarMask|IntMask,
+        SampleFormat_Signed16Planar = (2<<Masks)|PlanarMask|IntMask,
+        SampleFormat_Signed32Planar = (4<<Masks)|PlanarMask|IntMask,
+        SampleFormat_FloatPlanar = (4<<Masks)|PlanarMask,
+        SampleFormat_DoublePlanar = (8<<Masks)|PlanarMask,
+        // special formats, use higher bits than 64<<Masks
     };
     enum ChannelLayout {
         ChannelLayout_Left,
@@ -61,6 +81,8 @@ public:
 
     static ChannelLayout channelLayoutFromFFmpeg(qint64 clff);
     static qint64 channelLayoutToFFmpeg(ChannelLayout cl);
+    static SampleFormat sampleFormatFromFFmpeg(int fffmt);
+    static int sampleFormatToFFmpeg(SampleFormat fmt);
     static bool isPlanar(SampleFormat format);
 
     AudioFormat();
@@ -127,6 +149,7 @@ public:
         \sa bytesPerFrame()
     */
     int bytesPerSample() const;
+    int sampleSize() const;
     int bitRate() const; //bits per second
     int bytesPerSecond() const;
 private:
