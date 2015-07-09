@@ -49,8 +49,8 @@ public:
     void initSubtitleStatistics(int s);
     QVariantList getAudioTracksInfo(AVDemuxer* demuxer);
 
-    bool setupAudioThread(AVPlayer *player);
-    bool setupVideoThread(AVPlayer *player);
+    bool setupAudioThread(AVPlayer *player, int prog_no=0);
+    bool setupVideoThread(AVPlayer *player, int prog_no=0);
     // TODO: what if buffer mode changed during playback?
     void updateBufferValue(PacketBuffer *buf);
     void updateBufferValue();

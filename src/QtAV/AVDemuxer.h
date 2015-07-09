@@ -136,7 +136,7 @@ public:
      * Stream/index will not change in next load() unless media source changed
      * index < 0 is invalid
      */
-    bool setStreamIndex(StreamType st, int index);
+    bool setStreamIndex(StreamType st, int index, bool direct=false);
     // current open stream
     int currentStream(StreamType st) const;
     QList<int> streams(StreamType st) const;

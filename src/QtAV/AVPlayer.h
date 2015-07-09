@@ -222,7 +222,7 @@ public:
      * to force reload the stream, unload() then play()
      */
     //TODO: no replay
-    bool play(const QString& path);
+    bool play(const QString& path, int prog_no=1);
     bool isPlaying() const;
     bool isPaused() const;
     // TODO: use id as parameter and return ptr?
@@ -475,6 +475,7 @@ protected:
 private:
     class Private;
     QScopedPointer<Private> d;
+    int programNo;
 };
 
 } //namespace QtAV

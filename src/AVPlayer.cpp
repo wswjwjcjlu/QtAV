@@ -447,9 +447,10 @@ bool AVPlayer::captureVideo()
     return true;
 }
 
-bool AVPlayer::play(const QString& path)
+bool AVPlayer::play(const QString& path, int prog_no)
 {
     setFile(path);
+    programNo = prog_no;
     play();
     return true;//isPlaying();
 }
@@ -1107,7 +1108,7 @@ void AVPlayer::loadAndPlay()
 void AVPlayer::playInternal()
 {
     disconnect(this, SIGNAL(loaded()), this, SLOT(playInternal()));
-    if (!d->setupAudioThread(this)) {
+    if (!d->setupAudioThread(this, programNo)) {
         d->read_thread->setAudioThread(0); //set 0 before delete. ptr is used in demux thread when set 0
         if (d->athread) {
             qDebug("release audio thread.");
@@ -1115,7 +1116,7 @@ void AVPlayer::playInternal()
             d->athread = 0;//shared ptr?
         }
     }
-    if (!d->setupVideoThread(this)) {
+    if (!d->setupVideoThread(this, programNo)) {
         d->read_thread->setVideoThread(0); //set 0 before delete. ptr is used in demux thread when set 0
         if (d->vthread) {
             qDebug("release video thread.");

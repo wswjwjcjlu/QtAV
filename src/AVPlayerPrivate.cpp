@@ -285,12 +285,43 @@ void AVPlayer::Private::initVideoStatistics(int s)
     statistics.video_only.width = avctx->width;
 }
 // notify statistics change after audio/video thread is set
-bool AVPlayer::Private::setupAudioThread(AVPlayer *player)
+bool AVPlayer::Private::setupAudioThread(AVPlayer *player, int prog_no)
 {
     AVDemuxer *ademuxer = &demuxer;
+    AVProgram *program = new AVProgram();
     if (!external_audio.isEmpty())
         ademuxer = &audio_demuxer;
-    ademuxer->setStreamIndex(AVDemuxer::AudioStream, audio_track);
+    if (ademuxer->formatContext()!=0 && ademuxer->formatContext()->nb_programs>0) {
+            for (unsigned int i = 0; i< ademuxer->formatContext()->nb_programs; ++i) {
+                if (ademuxer->formatContext()->programs[i]->program_num == prog_no) {
+                    qDebug("(audio) program number is %i", ademuxer->formatContext()->programs[i]->program_num);
+                    program = ademuxer->formatContext()->programs[i];
+                    break;
+                }
+            }
+            if (program && program->nb_stream_indexes>0) {
+                for (unsigned int i=0; i<program->nb_stream_indexes; ++i) {
+                    foreach (unsigned int s, ademuxer->audioStreams()) {
+                        if(s == program->stream_index[i]){
+                            audio_track = s;
+                            qDebug("should be same here!");
+                            qDebug("AUDIO TRACK IS %d", audio_track);
+                            goto find_stream;
+                        }
+                    }
+                }
+                find_stream:
+                demuxer.setStreamIndex(AVDemuxer::AudioStream, audio_track, true);
+                qDebug("Video track %d", video_track);
+                qDebug("Audio track %d", audio_track);
+            }
+            else {
+                ademuxer->setStreamIndex(AVDemuxer::AudioStream, audio_track);
+            }
+        }
+        else{
+            ademuxer->setStreamIndex(AVDemuxer::AudioStream, audio_track);
+        }
     // pause demuxer, clear queues, set demuxer stream, set decoder, set ao, resume
     // clear packets before stream changed
     if (athread) {
@@ -413,9 +444,41 @@ QVariantList AVPlayer::Private::getAudioTracksInfo(AVDemuxer *demuxer)
     return info;
 }
 
-bool AVPlayer::Private::setupVideoThread(AVPlayer *player)
+bool AVPlayer::Private::setupVideoThread(AVPlayer *player, int prog_no)
 {
-    demuxer.setStreamIndex(AVDemuxer::VideoStream, video_track);
+    AVDemuxer *ademuxer = &demuxer;
+    AVProgram *program = new AVProgram();
+    if (ademuxer->formatContext()!=0 && ademuxer->formatContext()->nb_programs>0) {
+        for (unsigned int i = 0; i< ademuxer->formatContext()->nb_programs; ++i) {
+            if (ademuxer->formatContext()->programs[i]->program_num == prog_no) {
+                qDebug("(video) program number is %i", ademuxer->formatContext()->programs[i]->program_num);
+                program = ademuxer->formatContext()->programs[i];
+                break;
+            }
+        }
+        if (program && program->nb_stream_indexes>0) {
+            for (unsigned int i=0; i<program->nb_stream_indexes; ++i) {
+                foreach (unsigned int s, ademuxer->videoStreams()) {
+                    if(s == program->stream_index[i]){
+                        video_track = s;
+                        qDebug("should be same here!");
+                        qDebug("VIDEO TRACK IS %d", video_track);
+                        goto find_stream;
+                    }
+                }
+            }
+            find_stream:
+            demuxer.setStreamIndex(AVDemuxer::VideoStream, video_track, true);
+            qDebug("Video track %d", video_track);
+            qDebug("Audio track %d", audio_track);
+        }
+        else {
+            ademuxer->setStreamIndex(AVDemuxer::VideoStream, video_track);
+        }
+    }
+    else{
+        ademuxer->setStreamIndex(AVDemuxer::VideoStream, video_track);
+    }
     // pause demuxer, clear queues, set demuxer stream, set decoder, set ao, resume
     // clear packets before stream changed
     if (vthread) {

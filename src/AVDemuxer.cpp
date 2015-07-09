@@ -439,6 +439,7 @@ bool AVDemuxer::readFrame()
     }
     if (d->stream != videoStream() && d->stream != audioStream() && d->stream != subtitleStream()) {
         //qWarning("[AVDemuxer] unknown stream index: %d", stream);
+        av_free_packet(&packet);
         return false;
     }
     d->pkt = Packet::fromAVPacket(&packet, av_q2d(d->format_ctx->streams[d->stream]->time_base));
@@ -811,7 +812,7 @@ bool AVDemuxer::hasAttacedPicture() const
     return d->has_attached_pic;
 }
 
-bool AVDemuxer::setStreamIndex(StreamType st, int index)
+bool AVDemuxer::setStreamIndex(StreamType st, int index, bool direct)
 {
     QList<int> *streams = 0;
     Private::StreamInfo *si = 0;
@@ -829,15 +830,26 @@ bool AVDemuxer::setStreamIndex(StreamType st, int index)
         qWarning("stream type %d for index %d not found", st, index);
         return false;
     }
-    if (index >= streams->size() || index < 0) {
-        //si->wanted_stream = -1;
-        qWarning("invalid index %d (valid is 0~%d) for stream type %d.", index, streams->size(), st);
-        return false;
+    if (direct) {
+        if (!d->setStream(st, index))
+            return false;
+        qDebug("####################");
+        qDebug("index: %d", index);
+        qDebug("wanted index: %d", streams->indexOf(index));
+        si->wanted_index = streams->indexOf(index);
+        return true;
     }
-    if (!d->setStream(st, streams->at(index)))
-        return false;
-    si->wanted_index = index;
-    return true;
+    else{
+        if (index >= streams->size() || index < 0) {
+            //si->wanted_stream = -1;
+            qDebug("invalid index %d (valid is 0~%d) for stream type %d.", index, streams->size(), st);
+            return false;
+        }
+        if (!d->setStream(st, streams->at(index)))
+            return false;
+        si->wanted_index = index;
+        return true;
+    }
 }
 
 AVFormatContext* AVDemuxer::formatContext()
